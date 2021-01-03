@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<style type="text/css">
+
+body
+{
+	overflow: hidden;
+	background: {color: "black"};
+	margin: 0;
+}
+
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+<script type = "text/javascript">
+	
+
+	var scene, camera, renderer;  // Three.js rendering basics.
+
+	var cameraAndLight;  // Object holding both camera and light, for rotation.
+
+	var balls = [];   // An array of objects, each object has data for one bouncing ball.
+
+
+
+	/**
+	 *  Creates the bouncing balls and the wireframe cube in which the balls bounce,
+	 *  and adds them to the scene.  A light that shines from the direction of the
+	 *  camera's view is also bundled with the camera and added to the scene.
+	 */
+	function createWorld() {
+
+		/* Add the camera and a light to the scene, linked into one object. */
+		var light = new THREE.DirectionalLight();
+		light.position.set(0,0,1);
+        light.castShadow = true; // default false
+		camera.position.set(0,0,40);
+		cameraAndLight = new THREE.Object3D();
+		cameraAndLight.add(camera);
+		cameraAndLight.add(light);
+		scene.add(cameraAndLight);
+      
+        //Set up shadow properties for the light
+        light.shadow.mapSize.width = 512;  // default
+        light.shadow.mapSize.height = 512; // default
+        light.shadow.camera.near = 0.5;    // default
+        light.shadow.camera.far = 500;     // default
+
+		/* Create and add the wireframe cube to the scene */
+		scene.add( new THREE.Mesh(
+			new THREE.CubeGeometry(20,20,20,0,0,200),  // 4 subdivisions in each direction
+			new THREE.MeshBasicMaterial( { color: "aqua", wireframe: true } )
+		) );
+		
+		/* Create some balls and add them to the scene */
+		var geometry = new THREE.SphereGeometry(1,20,12);
+		var metarial = new THREE.MeshPhongMaterial( { color: Math.floor(Math.random() * 0x1000000),
+				specular:0xffffff,
+				shininess: 100});
+		
+		var myMesh = new THREE.Mesh(geometry, metarial);
+      
+		myMesh.x = 18*Math.random() - 9;   // set random ball position
+		myMesh.y = 18*Math.random() - 9;
+		myMesh.z = 18*Math.random() - 9;
+		myMesh.dx = Math.random() * 6 + 10;  // set random ball velocity, in units per second
+		myMesh.dy = Math.random() * 6 + 10;
+		myMesh.dz = Math.random() * 6 + 10;
+		if (Math.random() < 0.5)
+			myMesh.dx = -myMesh.dx;
+		if (Math.random() < 0.5)
+			myMesh.dy = -myMesh.dy;
+		if (Math.random() < 0.5)
+			myMesh.dz = -myMesh.dz;
+		myMesh.position.set( myMesh.x, myMesh.y, myMesh.z);
+		scene.add(myMesh);
+		balls.push(myMesh);
+	}
+	
+
+
+	/**
+	 *  An event listener for key events, installed in init()
+	 */
+	function doKey(evt) {
+		var moved = true;
+		switch (evt.keyCode) {
+			case 37: cameraAndLight.rotateY(0.05); break;       // left
+			case 39: cameraAndLight.rotateY(-0.05); break;      // right
+			case 38: cameraAndLight.rotateX(0.05); break;       // up
+			case 40: cameraAndLight.rotateX(-0.05); break;      // down
+			case 13: cameraAndLight.rotation.set(0,0,0); break; // return
+			case 36: cameraAndLight.rotation.set(0,0,0); break; // home
+			default: moved = false;
+		}
+		if (moved) {
+			evt.preventDefault();
+			if (!animating) {
+				render();
+			}
+		}
+	}
+
+	
+
+	/**
+	 *  Render the scene.  This is called by init() and when the object, texture, rotation,
+	 *  or texture offset is changed.
+	 */
+	function render() {
+		renderer.render(scene, camera);
+	}
+
+
+	/**
+	 *  When an animation is in progress, this function is called just before rendering each
+	 *  frame of the animation.  In this case, the bouncing balls are moved by an amount
+	 *  
+	 */
+	function updateForFrame() { 
+		   var dt = clock.getDelta();  // time since last update
+		   if (dt > 0.5) {
+			   return;  // Assume animation was paused; I don't want to move the balls too much.
+		   }
+		   for (var i = 0; i < balls.length; i++) {
+			   var ball = balls[i];
+			   
+			   /* update ball position based on ball velocity and elapsed time */
+			   ball.x += ball.dx * dt;
+			   ball.y += ball.dy * dt; 
+			   ball.z += ball.dz * dt;
+			   
+			   /* if ball has moved outside the cube, reflect it back into the cube */
+			   if (ball.x > 9) {
+                   ball.x -= 2*(ball.x - 9);
+                   ball.dx = -Math.abs(ball.dx);
+			   } 
+			   else if (ball.x < -9) {
+				   ball.x += 2*(-9 - ball.x);
+				   ball.dx = Math.abs(ball.dx);
+			   }
+			   if (ball.y > 9) {
+				   ball.y -= 2*(ball.y - 9);
+				   ball.dy = -Math.abs(ball.dy);
+			   }
+			   else if (ball.y < -9) {
+				   ball.y += 2*(-9 - ball.y);
+				   ball.dy = Math.abs(ball.dy);
+			   }
+			   if (ball.z > 9) {
+				   ball.z -= 2*(ball.z - 9);
+				   ball.dz = -Math.abs(ball.dz);
+			   }
+			   else if (ball.z < -9) {
+				   ball.z += 2*(-9 - ball.z);
+				   ball.dz = Math.abs(ball.dz);
+			   }
+			   
+			   ball.position.set(ball.x, ball.y, ball.z);
+		   }
+		}
+
+
+		//--------------------------- animation support -----------------------------------
+
+		var clock;  // Keeps track of elapsed time of animation.
+
+		var animating = false;
+
+		function doFrame() {  
+			if (animating) {
+				clock.frameNumber++;
+				updateForFrame();
+				render();
+				requestAnimationFrame(doFrame); 
+			}
+		}
+
+		function startAnimation() {
+			if (!animating) {
+			   if (!clock) {
+				  clock = new THREE.Clock(false);
+				  clock.frameNumber = 0;
+				  clock.getFrameNumber = function() { return this.frameNumber }
+			   }
+			   clock.start();
+			   animating = true;
+			   requestAnimationFrame(doFrame);
+		}
+	}
+
+	function pauseAnimation() {
+		if (animating) {
+			clock.stop();
+			animating = false;
+		}
+	}
+
+	//----------------------------------------------------------------------------------
+
+	/**
+	 *  This init() function is called when by the onload event when the document has loaded.
+	 */
+	function init() {
+		try {
+			var theCanvas = document.getElementById("myCanvas");
+			if (!theCanvas || !theCanvas.getContext) {
+				document.getElementById("message").innerHTML = 
+							 "Sorry, this page does support canvas graphics.";
+				return;
+			}
+			try {
+				if (window.WebGLRenderingContext) {
+					renderer = new THREE.WebGLRenderer( { 
+					   canvas: theCanvas, 
+					   antialias: true
+					} );
+				} 
+			}
+			catch (e) {
+			}
+			if (!renderer) {
+				document.getElementById("message").innerHTML = 
+							   "Sorry, WebGL is required but is not available.";
+				return;
+			}
+			renderer.setClearColor( 0x444444 );  // dark gray background
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera(50, theCanvas.width/theCanvas.height, 0.1, 100);
+			createWorld();
+			document.addEventListener("keydown", doKey, false);
+			startAnimation();
+		 }
+		 catch (e) {
+			document.getElementById("message").innerHTML = "Sorry, an error occurred: " + e;
+		 }
+	}
+	
+	function getRandomColor() {
+		var letters = '0123456789ABCDEF'.split('');
+		var color = '#';
+		for (var i = 0; i < 6; i++ ) {
+			color += letters[Math.floor(Math.random() * 16)];
+		}
+		return color;
+	}
+</script>
+</head>
+
+<body onload = "init()" data-gr-c-s-loaded= "true">
+
+	<div> <canvas width="600" height="600" id="myCanvas" style="background-color: black"></div>
+
+</body>
+
+</html>

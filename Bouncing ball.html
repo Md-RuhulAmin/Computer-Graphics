@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment 3" />
+  	<meta charset="utf-8" />
+	<title>Bouncing ball</title>
+	<style>
+		#container {
+			background: #ffffff;
+			width: 100%;
+			height: 100%;
+		}
+  </style>
+<meta charset=utf-8 />  
+<style id="jsbin-css">
+
+</style>
+</head>
+<body>
+<div id="container">
+</div>
+</body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script> 
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r58/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.5/dat.gui.min.js"></script>
+	<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+	<script type="text/javascript">
+
+
+	// set the scene size
+	var WIDTH = 500, HEIGHT = 600;
+
+	// set some camera attributes
+	var VIEW_ANGLE = 45, ASPECT = WIDTH / HEIGHT, NEAR = 1, FAR = 1000;
+
+	// get the DOM element to attach to
+	var $container = $('#container');
+
+	// create a WebGL renderer, camera, and a scene
+      
+    var renderer = new THREE.WebGLRenderer();
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+	var scene = new THREE.Scene();
+    //background color
+    scene.background = new THREE.Color( 0x000000 );
+	var clock = new THREE.Clock();
+	var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+	 // the camera starts at 0,0,0 so pull it back
+	camera.position.z = 40;    	
+	// add the camera to the scene
+	scene.add(camera)
+   
+	// set up the camera controls.  Please keep in mind that what this does is move the entire scene around.
+	// because the entire scene is moving the position of the camera and lights in relation to objects within 
+	// the scene doesn't change so the lighting on the surface of the object(s) will not change either
+	var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+	cameraControls.addEventListener( 'mousemove', renderer );
+    cameraControls.autoRotate = false;
+      
+	// start the renderer
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// attach the render-supplied DOM element
+	$container.append(renderer.domElement);
+
+	// ----------------------------------------------------------------------------------------
+	//  END OF THE STANDARD CODE FOR THE ASSIGNMENT
+	//  Following this is where you must place your own custom code to complete the assignment
+	// ----------------------------------------------------------------------------------------
+
+    //create a new material fo render the polygon with the required color
+	var material = new THREE.MeshPhongMaterial(
+	{
+      color:0xffffff, wireframe: false, side: THREE.DoubleSide
+	});
+
+    //load plain 3D sphere
+    var myGeometry = new THREE.SphereGeometry( 2, 50, 50, 0, Math.PI * 2, 0, Math.PI )
+      
+
+    
+    //this joins the shape and the material for a new mesh
+    var myMesh  = new THREE.Mesh( myGeometry, material);   
+	
+	myMesh.castShadow = true; //default is false
+	myMesh.receiveShadow = true; //default
+	
+	// add the polygon to the scene
+	scene.add( myMesh );   
+      
+	//create a new point light
+	//a point light can create resonable shadow
+
+	var light = new THREE.PointLight( 0xffffff, 2, 100 );
+	light.position.set(-30,10,60); 
+	light.castShadow = true;            // default false
+	scene.add( light );
+	
+	//Set up shadow properties for the light
+	light.shadow.mapSize.width = 512;  // default
+	light.shadow.mapSize.height = 612; // default
+	light.shadow.camera.near = 0.5;       // default
+	light.shadow.camera.far = 500      // default
+	
+	//Create a plane that receives shadows (but does not cast them)
+	var planeGeometry = new THREE.PlaneBufferGeometry( 25, 30, 200, 300 );
+	var planeMaterial = new THREE.MeshStandardMaterial( { color: 0xffff00, wireframe: true } )
+	var plane = new THREE.Mesh( planeGeometry, planeMaterial );
+	plane.receiveShadow = true;
+	scene.add( plane );
+	
+	//Create a helper for the shadow camera (optional)
+	//var helper = new THREE.CameraHelper( light.shadow.camera );
+	//scene.add( helper );
+
+	//delta x and y allow me to update the position of the ball on screen
+	//higher dy and dx means faster movement. Unequal values makes for more
+	// complicated motion
+	var dy = 0.3;
+	var dx = -0.2;
+	var x = 2;
+	var y = 3;
+
+    function bounce(){
+    
+		//if ball collides with the edges on x, reverse direction of travel and change 
+		//color
+		if(x + dx > 13 || x + dx < -13) {
+			//this simply reverses the update direction untl the ball reaches the bounds again
+			dx = -dx;
+			//color is set at random using RGB values. It was easier than hex.
+			myMesh.material.color.setRGB(Math.random(), Math.random()*25, Math.random()*55)
+		}
+		//if ball collides with the edges on y, reverse direction of travel and change
+		//color
+		if(y + dy > 15 || y + dy < -15) {
+			dy = -dy;
+			//color set at random with three components
+			myMesh.material.color.setRGB(Math.random()*155, Math.random()*5, Math.random()*25)
+		}
+		
+		//update location
+		x = x + dx;
+		myMesh.position.x = x;
+		y = y + dy;
+		myMesh.position.y = y;
+    }
+
+	// Standard functions for rendering the scene.  Notice how we have the animate function 
+	// which submits a call to requestAnimationFrame to call animate.   This creates a loop
+	// that will render the scene again whenever something within the scene changes.
+	function animate() {
+        //you much update within this function
+        bounce()
+		requestAnimationFrame(animate);
+		render();
+	}
+
+	function render() {
+		cameraControls.update();
+		renderer.render(scene, camera);
+	}
+	animate();
+	</script>
+</html>

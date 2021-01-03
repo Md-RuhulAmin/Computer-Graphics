@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #5" />
+  	<meta charset="utf-8" />
+	<title>Rotate rectangle</title>
+	<style>
+		#container { 
+			background: #cdcdcd;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />
+<title>CS4406 Computer Graphics - Assignment #2</title>
+  
+<style id="jsbin-css">
+
+</style>
+</head>
+<body>
+<div id="container">
+</div>
+</body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.5/dat.gui.min.js"></script>
+	<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+    <script src="https://github.com/mrdoob/three.js/blob/master/examples/jsm/WebGL.js"></script>
+	<script type="text/javascript">
+
+	// set the scene size
+	var WIDTH = 600, HEIGHT = 600;
+
+	// set some camera attributes
+	var VIEW_ANGLE = 45, ASPECT = WIDTH / HEIGHT, NEAR = 1, FAR = 1000;
+
+	// get the DOM element to attach to
+	var $container = $('#container');
+
+	// create a WebGL renderer, camera, and a scene
+	
+    var renderer = new THREE.WebGLRenderer(); 
+
+	var scene = new THREE.Scene();
+	var clock = new THREE.Clock();
+	var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+	 // the camera starts at 0,0,0 so pull it back
+	camera.position.z = 30;    	
+	// add the camera to the scene
+	scene.add(camera)
+   
+	// set up the camera controls.  Please keep in mind that what this does is move the entire scene around.
+	// because the entire scene is moving the position of the camera and lights in relation to objects within 
+	// the scene doesn't change so the lighting on the surface of the object(s) will not change either
+	var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+	cameraControls.addEventListener( 'mousemove', renderer );
+    // Calling the autoRotate method to rotate the camera on the axis
+      cameraControls.autoRotate = true;
+  
+	// start the renderer
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// attach the render-supplied DOM element
+	$container.append(renderer.domElement);
+
+	// ----------------------------------------------------------------------------------------
+	//  END OF THE STANDARD CODE FOR THE ASSIGNMENT
+	//  Following this is where you must place your own custom code to complete the assignment
+	// ----------------------------------------------------------------------------------------
+      
+	// create the material
+	var sphereMaterial = new THREE.MeshLambertMaterial(
+	{
+      color:0xBBCC00, wireframe: false, side: THREE.DoubleSide
+	});
+
+    var myGeometry = new THREE.Geometry();
+    
+    // Adding extra vertices to call some more extra point on the scene
+    // And also calling the push method.
+      myGeometry.vertices.push( 
+      new THREE.Vector3(-5, -5, -2.5), 
+      new THREE.Vector3(-5, 5, -2.5), 
+      new THREE.Vector3(5, 5, -2.5),
+      new THREE.Vector3(5, -5, -2.5),
+      new THREE.Vector3(-5, -5, 2.5),
+      new THREE.Vector3(-5, 5, 2.5),
+      new THREE.Vector3(5, 5, 2.5),
+      new THREE.Vector3(5, -5, 2.5),
+   );  
+
+    // Once the points have been defined we need to tell WebGL that they form a face 
+    // (a polygon) we this by 'pushing' the four points onto the face with the following 
+    // call.  Notice that the order in which the points are introduced can change how
+    // the polygon is constructed.  The points are indexed as 0,1,2,3 etc. and this 
+    // comes from the order in which the points (or vertices) were created
+    // the first created is 0, the second 1, and so on.
+    // Crating all the triangles one by one to create the 3D square
+    // THough the assignment was only asking for the one side of 2D squere, 
+    // I did 3D Sqaure.
+    myGeometry.faces.push( new THREE.Face3( 3, 2, 1) );
+    myGeometry.faces.push( new THREE.Face3( 3, 0, 1) );
+    myGeometry.faces.push( new THREE.Face3( 7, 6, 5) );
+    myGeometry.faces.push( new THREE.Face3( 7, 4, 5) );
+    myGeometry.faces.push( new THREE.Face3( 1, 5, 4) );
+    myGeometry.faces.push( new THREE.Face3( 1, 0, 4) );
+    myGeometry.faces.push( new THREE.Face3( 2, 6, 7) );
+    myGeometry.faces.push( new THREE.Face3( 2, 7, 3) );
+    myGeometry.faces.push( new THREE.Face3( 1, 5, 2) );
+    myGeometry.faces.push( new THREE.Face3( 5, 2, 6) );
+    myGeometry.faces.push( new THREE.Face3( 0, 3, 7) );
+    myGeometry.faces.push( new THREE.Face3( 0, 4, 7) );
+    myGeometry.computeBoundingSphere();
+      
+    var myPolygon  = new THREE.Mesh( myGeometry, sphereMaterial);   
+   
+	// add the polygon to the scene
+	scene.add( myPolygon );   
+
+    // add ambient lighting
+    // I change the color of the AmbientLight to Red as the assignment ask for.
+    var ambientLight = new THREE.AmbientLight(0xFF0000);
+    scene.add(ambientLight);     
+
+
+	// ----------------------------------------------------------------------------------------
+	// END OF YOUR CUSTOM CODE FOR THE ASSIGNMENT
+	// The rendering functions that follow are standard and can be used for this assignment.  
+	// You are welcome to customize them or create your own if you desire, however, you can 
+	// simply use the code provided.
+	//
+
+	// Standard functions for rendering the scene.  Notice how we have the animate function 
+	// which submits a call to requestAnimationFrame to call animate.   This creates a loop
+	// that will render the scene again whenever something within the scene changes.
+	function animate() {
+		requestAnimationFrame(animate);
+		render();
+	}
+
+	function render() {
+		cameraControls.update();
+		renderer.render(scene, camera);
+	}
+	animate();
+	</script>
+</html>
