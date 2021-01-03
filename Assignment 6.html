@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #4" />
+  	<meta charset="utf-8" />
+	<title>Assignment-5 of CS4406</title>
+	<style>
+		#container {
+			background: #000000;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />  
+<style id="jsbin-css"></style>
+</head>
+<body >
+<div id="container"></div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+	<script src="https://code.jquery.com/jquery-1.11.3.js"></script>
+    <script type="text/javascript">
+		// set the scene size
+		var WIDTH = window.innerWidth, 
+			HEIGHT = window.innerHeight;
+
+		// set some camera attributes
+		var VIEW_ANGLE = 50, 
+			ASPECT = WIDTH/HEIGHT,
+			NEAR = 1, 
+			FAR = 1000;
+		  
+		// defining some variables to set the positions of the moon
+		// The starting angle
+		var theta = 0;
+		// Moon orbital radius
+		var radius = 20;
+		// Angle increment value
+		var vTheta = 2 * Math.PI / 1000;
+		
+
+		// get the DOM element to attach to
+		var $container = $('#container');
+
+		// create a WebGL renderer, camera, and a scene
+		var renderer = new THREE.WebGLRenderer({ antialias: true });
+		
+		// Create the scene
+		var scene = new THREE.Scene();
+		scene.background = new THREE.Color(0x000000);
+		var clock = new THREE.Clock();
+		
+		// Create the camera
+		var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+		camera.position.set(0, 0, 50);
+		  
+		// add the camera to the scene
+		scene.add(camera);
+	   
+		// set up the camera controls. 
+		var cameraOrbit = new THREE.OrbitControls(camera, renderer.domElement);
+		
+		// Disable rotatating entiere scene
+		cameraOrbit.autoRotate = false;
+		cameraOrbit.enabled = false;
+		 
+		// start the renderer
+		renderer.setSize(WIDTH, HEIGHT);
+
+		// attach the render-supplied DOM element
+		$container.append(renderer.domElement);
+
+    
+		// Adding a new ambient light
+		var ambientLight = new THREE.AmbientLight( 0x888888, 0.2 );
+		scene.add(ambientLight);
+
+		// Creating a new Directional light also
+		var directionalLight = new THREE.DirectionalLight (0xfdfcf0, 1);
+		directionalLight.position.set(20, 0, 10);
+		scene.add(directionalLight);
+
+
+		// Creating a geometry for earth sphere
+		var earthGeometry = new THREE.SphereGeometry( 10, 50, 50 );
+
+		var earthTexture = new THREE.TextureLoader().load("https://upload.wikimedia.org/wikipedia/commons/c/cf/WorldMap-A_non-Frame.png");
+
+		// Creating a Material for eath sphere
+		var earthMaterial = new THREE.MeshPhongMaterial({
+			map: earthTexture,
+			color: 0xaaaaaa,
+			specular: 0x333333,
+			shininess: 25
+		});
+
+		// Building the earth mash
+		var earth = new THREE.Mesh(earthGeometry, earthMaterial);
+		//add the earth mesh to the scene
+		scene.add(earth);
+
+		var cloudTexture = new THREE.TextureLoader().load("https://mcdn.wallpapersafari.com/medium/29/65/BiLp83.jpg");
+
+		//Cloud Geomtry and Material
+		var cloudGeometry = new THREE.SphereGeometry(10.3,  50, 50);
+		var cloudMaterial = new THREE.MeshPhongMaterial({
+			map: cloudTexture,
+			transparent: true,
+			opacity: 0.1
+		});
+
+		//Create a cloud mesh and add it to the scene.
+		var clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+		scene.add(clouds);
+
+		var moonTexture = new THREE.TextureLoader().load("https://upload.wikimedia.org/wikipedia/commons/d/db/Moonmap_from_clementine_data.png");
+
+		// Creating the moon geometry and metarial
+		var moonGeometry = new THREE.SphereGeometry(3.5, 50,50);
+		var moonMaterial = new THREE.MeshPhongMaterial({
+			map: moonTexture
+		});
+		var moon = new THREE.Mesh(moonGeometry, moonMaterial);
+		moon.position.set(35,0,0);
+		scene.add(moon);
+    
+		// Creating the universe of start background
+		var geometry = new THREE.SphereGeometry(1000, 50, 50);
+		var material = new THREE.MeshPhongMaterial({
+		  map: new THREE.TextureLoader().load("https://ak.picdn.net/shutterstock/videos/1008354346/thumb/1.jpg"),
+		  side: THREE.DoubleSide,
+		  shininess: 0
+		});
+		var starBackground = new THREE.Mesh(geometry, material);
+		scene.add(starBackground);
+		
+		// Creating the rendering functions
+		// Standard functions for rendering the scene.  Notice how we have the animate function 
+		// which submits a call to requestAnimationFrame to call animate.   This creates a loop
+		// that will render the scene again whenever something within the scene changes.
+		function animate() {
+			requestAnimationFrame(animate);
+		  
+			//Rotate the earth and clouds about the y-axis
+			earth.rotation.y += .0005;
+			clouds.rotation.y += 0.00025;
+				
+			theta += vTheta; // incrementing the angle
+		  
+			// updating the moon position based on new theta value  
+			moon.position.x = radius * Math.cos(theta);
+			moon.position.z = radius * Math.sin(theta);
+		  
+			render();
+		}
+
+		function render() {
+			cameraOrbit.update();    
+			renderer.render(scene, camera);
+		}
+		animate();
+    
+	</script>
+  </body>
+</html>
+

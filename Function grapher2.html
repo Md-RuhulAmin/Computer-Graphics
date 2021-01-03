@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #4" />
+  	<meta charset="utf-8" />
+	<title>Assignment-5 of CS4406</title>
+	<style>
+		#container {
+			background: #666688;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />  
+<style id="jsbin-css"></style>
+</head>
+<body >
+<div id="container"></div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+	<script src="https://code.jquery.com/jquery-1.11.3.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/src/extras/curves/QuadraticBezierCurve3.js"></script>
+   
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.5/dat.gui.min.js"></script>
+
+  <script src = "https://raw.githubusercontent.com/mrdoob/three.js/dev/docs/api/en/geometries/ParametricBufferGeometry.html"></script>
+  
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/DragControls.js"></script>
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/TransformControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.js"></script>
+  
+  <script type="text/javascript">
+      
+		// set the scene size
+		var WIDTH = window.innerWidth, 
+			HEIGHT = window.innerHeight;
+
+		// set some camera attributes
+		var VIEW_ANGLE = 65, 
+			ASPECT = WIDTH/HEIGHT,
+			NEAR = .1, 
+			FAR = 100;		
+
+		// get the DOM element to attach to
+		var $container = $('#container');
+
+		// create a WebGL renderer, camera, and a scene
+		var renderer = new THREE.WebGLRenderer({ antialias: true, alpha : true });
+		// start the renderer
+		renderer.setSize(WIDTH, HEIGHT);
+    
+    // start the renderer and enable shadow
+    // updated this for console warning
+    //renderer.shadowMap.enabled = true;
+    renderer.setClearColor(0x666666, 1); // dark grey background for space
+    
+    
+		// Create the scene
+		var scene = new THREE.Scene();
+		var clock = new THREE.Clock();
+		var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+    
+		// the camera starts at 0,0,0 so pull it back
+    camera.position.z = 10; 
+    camera.position.x = -5;
+    camera.position.y = 2;
+		  
+		// add the camera to the scene
+		scene.add(camera);
+	   
+		// set up the camera controls. 
+		var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+		cameraControls.addEventListener( 'mousemove', renderer );
+		// Disable rotatating entiere scene
+		// cameraControls.autoRotate = true;
+    cameraControls.enebleZoom = true;
+		 
+		// helps with resizing windows
+    window.addEventListener('resize', onWindowResize, false);
+    
+    function onWindowResize() {
+
+        windowHalfX = window.innerWidth / 2;
+        windowHalfY = window.innerHeight / 2;
+        HEIGHT = window.innerHeight;
+        WIDTH = window.innerWidth;
+
+        camera.aspect = WIDTH / HEIGHT;
+        camera.updateProjectionMatrix();
+        renderer.setSize( WIDTH, HEIGHT );
+
+    }
+    
+    renderer.domElement.addEventListener( 'click', scaleIt, false );
+    renderer.domElement.addEventListener( 'dblclick', resetScale, false );
+
+    function scaleIt ( e ) { 
+        paraMesh.scale.x+=.1;
+        paraMesh.scale.y+=.1; 
+        paraMesh.scale.z+=.1; 
+    }
+    function resetScale( e ) { 
+      paraMesh.scale.x=1;
+      paraMesh.scale.y=1; 
+      paraMesh.scale.z=1; 
+    }
+
+		// attach the render-supplied DOM element
+		$container.append(renderer.domElement);
+
+        
+    // lighting section
+    // add ambient lighting bit of grey
+    var ambientLight = new THREE.AmbientLight(0xffffff, .5 ); 
+    scene.add(ambientLight);
+
+    // bit of grey
+    var directionalLight = new THREE.DirectionalLight( 0xffffff, 1.1 );
+    directionalLight.position.set(camera.position);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    
+    // plane
+    // ----------------------------------------
+    var planeMaterial = new THREE.MeshBasicMaterial( { color: 0x000088, wireframe: true, side:THREE.DoubleSide } );
+
+    // I want a floor 
+    var planeGeometry = new THREE.PlaneGeometry(10, 10,10,10);
+    var myPlane = new THREE.Mesh(planeGeometry,planeMaterial);
+    myPlane.rotation.x = ( Math.PI / 2) ;
+    myPlane.position.y = -2;
+    myPlane.position.z = 3;
+    scene.add(myPlane);
+    
+    
+    function parabola(u, v, vector){
+       x=-1+2*u;
+       y=-1+2*v;
+      
+       z=y*y+x*x;
+      
+        // set the vector coordinates
+        vector.set(x, y, z);
+    }
+    
+    
+    var paraGeometry = new THREE.ParametricBufferGeometry(parabola, 21, 21, true);
+    var paraMaterial = new THREE.MeshNormalMaterial({ vertexColors: THREE.VertexColors, side:THREE.DoubleSide });
+    var paraMesh = new THREE.Mesh( paraGeometry, paraMaterial );
+    paraMesh.verticesNeedUpdate = true;
+    paraGeometry.verticesNeedUpdate = true;
+    paraMesh.position.set (0,0,0);
+
+    scene.add( paraMesh );
+    
+    
+    // add axis helper
+    scene.add( new THREE.AxisHelper( 4 ) );
+		
+		
+		// Creating the rendering functions
+		function animate() {
+			requestAnimationFrame(animate);
+			render();
+		}
+
+		function render() {
+			cameraControls.update();    
+			renderer.render(scene, camera);
+		}
+		animate();
+    
+	</script>
+  </body>
+</html>
+

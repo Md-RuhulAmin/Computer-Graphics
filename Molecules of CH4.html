@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #4" />
+  	<meta charset="utf-8" />
+	<title>Assignment-5 of CS4406</title>
+	<style>
+		#container {
+			background: #ffffff;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />  
+<style id="jsbin-css"></style>
+</head>
+<body >
+<div id="container"></div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.js"></script>
+    <script type="text/javascript">
+	// set the scene size
+	var WIDTH = window.innerWidth, 
+        HEIGHT = window.innerHeight;
+
+	// set some camera attributes
+	var VIEW_ANGLE = 50, 
+        ASPECT = WIDTH / HEIGHT, 
+        NEAR = 1, 
+        FAR = 5000;
+
+	// get the DOM element to attach to
+	var $container = $('#container');
+
+	// create a WebGL renderer, camera, and a scene
+	var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+	// Create the scene
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+	var clock = new THREE.Clock();
+    
+    // Create the camera
+	var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+	camera.position.z = 200;
+      
+	// add the camera to the scene
+    scene.add(camera);
+   
+	// set up the camera controls. 
+	var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+    
+    // Disable rotatating entiere scene
+    cameraControls.autoRotate = false;
+    cameraControls.enabled = false;
+     
+    // start the renderer
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// attach the render-supplied DOM element
+	$container.append(renderer.domElement);
+
+    // create a point light and add to scene
+    var light = new THREE.SpotLight(0xffffff);
+    light.castShadow = true;
+    light.position.set(40, 40, 200);
+    scene.add(light);
+    
+    // Adding shadow properties
+    light.shadow.mapSize.width = 200;  // default
+    light.shadow.mapSize.height = 200; // default
+    light.shadow.camera.near = 0.5;    // default
+    light.shadow.camera.far = 600;     // default
+    
+    // Adding an ambient light to light up a bit
+    var ambientLight = new THREE.AmbientLight( 0xffffff, 0.5 );
+    scene.add(ambientLight );
+    
+    //create "molecule" that will hold the atoms
+    var molecule = new THREE.Group();
+    
+    //create colors of materials
+    var blueMaterial = new THREE.MeshStandardMaterial({color: 0x038dff});
+    var redMaterial = new THREE.MeshStandardMaterial({color: 0xff0000});
+    var whiteMaterial = new THREE.MeshStandardMaterial({color: 0xffffff});
+
+    
+    //create carbon molecule and casting the shadow
+    var carbonGeometry = new THREE.SphereBufferGeometry(20, 32, 32);    
+    var carbon = new THREE.Mesh(carbonGeometry, redMaterial);
+    carbon.castShadow = true;
+    carbon.receiveShadow = true;
+    molecule.add(carbon);
+    
+    // create hydrogen geometry
+    var hydrogenGeometry = new THREE.SphereBufferGeometry(7, 16, 16)
+        .translate(0, 30, 0);
+    
+    // Creating the hydrogen molecule and casting the shadow
+    var hydrogen = new THREE.Mesh(hydrogenGeometry, blueMaterial);
+    hydrogen.castShadow = true;
+    hydrogen.receiveShadow = true;
+    
+    // Creating white tube bonding geometry
+    var tubeGeometry = new THREE.CylinderGeometry(3, 3, 30, 16);
+    tubeGeometry.translate(0, 15, 0);
+    
+    // Creating the tube bond and and casting the shadow
+    var tube = new THREE.Mesh(tubeGeometry, whiteMaterial);
+    tube.castShadow = true;
+    tube.receiveShadow = true;
+    
+    // Create atom-bond object to combine hydrogen and bond
+    var atomBond = new THREE.Group();
+    atomBond.add(hydrogen);
+    atomBond.add(tube);
+    
+    //create 4 copies of the atomBond to add hydrogen to the Carbon
+    
+    // Creating first copy of the hydrogen atomBond and setting its position
+    var hydrogen1 = atomBond.clone();
+    hydrogen1.position.setY(15);
+    molecule.add(hydrogen1);
+    
+    // Creating second copy of the hydrogen atomBond and setting its position
+    var hydrogen2 = atomBond.clone();
+    hydrogen2.position.setX(10);
+    hydrogen2.position.setY(-10);
+    hydrogen2.position.setZ(-10);
+    hydrogen2.rotateZ(Math.PI * 4 / 3);
+    hydrogen2.rotateX(Math.PI * 7/4);
+    molecule.add(hydrogen2);
+    
+    // Creating third copy of the hydrogen atomBond and setting its position
+    var hydrogen3 = atomBond.clone();
+    hydrogen3.position.setY(-10);
+    hydrogen3.position.setZ(10);
+    hydrogen3.rotateX(Math.PI * 3 / 4);
+    molecule.add(hydrogen3);
+    
+    // Creating fourth copy of the hydrogen atomBond and setting its position
+    var hydrogen4 = atomBond.clone();
+    hydrogen4.rotateZ(Math.PI * 2 / 3);
+    hydrogen4.rotateX(Math.PI * 7 / 4);
+    hydrogen4.position.setX(-10);
+    hydrogen4.position.setZ(-10);
+    hydrogen4.position.setY(-10);
+    molecule.add(hydrogen4);
+    
+    //add the whole molecule to the scene
+    scene.add(molecule);
+    
+    // Creating geometry for a plane to receive the shadow
+    var planeGeometry = new THREE.PlaneBufferGeometry(300, 300, 32, 32);
+    // Definig the material for the the shadow plane
+    var planeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8878,
+        side: THREE.DoubleSide
+    });
+    // Meshing the palne and adding it to the scene
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.position.set(0, 0, -200);
+    plane.receiveShadow = true;
+    scene.add(plane);
+    
+    
+    //Using mouse to rotate the molecule
+    //code from https://gamedev.stackexchange.com/a/130930
+    var isDragging = false;
+    var previousMousePosition = {
+        x: 0,
+        y: 0
+    };
+
+    const toRadians = (angle) => {
+        return angle * (Math.PI / 180);
+    };
+
+    const toDegrees = (angle) => {
+        return angle * (180 / Math.PI);
+    };
+
+    const renderArea = renderer.domElement;
+
+    renderArea.addEventListener('mousedown', (e) => {
+        isDragging = true;
+    });
+
+    renderArea.addEventListener('mousemove', (e) => {
+        var deltaMove = {
+            x: e.offsetX - previousMousePosition.x,
+            y: e.offsetY - previousMousePosition.y
+        };
+
+        if (isDragging) {
+
+            let deltaRotationQuaternion = new THREE.Quaternion().
+            setFromEuler(
+                new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
+            );
+
+            molecule.quaternion.multiplyQuaternions(deltaRotationQuaternion, molecule.quaternion);
+        }
+
+        previousMousePosition = {
+            x: e.offsetX,
+            y: e.offsetY
+        };
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        isDragging = false;
+    });
+    
+    
+    // Creating the rendering functions
+    // Standard functions for rendering the scene.  Notice how we have the animate function 
+    // which submits a call to requestAnimationFrame to call animate.   This creates a loop
+    // that will render the scene again whenever something within the scene changes.
+	function animate() {
+		requestAnimationFrame(animate);
+		render();
+	}
+
+	function render() {
+ 		cameraControls.update();
+		renderer.render(scene, camera);
+	}
+	animate();
+    
+	</script>
+  </body>
+</html>

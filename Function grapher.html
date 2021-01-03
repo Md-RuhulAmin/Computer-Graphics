@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #4" />
+  	<meta charset="utf-8" />
+	<title>Assignment-5 of CS4406</title>
+	<style>
+		#container {
+			background: #000000;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />  
+<style id="jsbin-css"></style>
+</head>
+<body>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r58/three.min.js"></script>
+	<script src="https://stemkoski.github.io/Three.js/js/Detector.js"></script>
+	<script src="https://stemkoski.github.io/Three.js/js/Stats.js"></script>
+	<script src="https://stemkoski.github.io/Three.js/js/TrackballControls.js"></script>
+	<script src="https://code.jquery.com/jquery-1.11.3.js"></script>
+
+	<!-- http://silentmatt.com/javascript-expression-evaluator/ -->
+	<script src="https://stemkoski.github.io/Three.js/js/parser.js"></script>
+
+	<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+	<script type='text/javascript'>
+
+		// standard global variables
+		var container, scene, camera, renderer, controls, stats;
+		var clock = new THREE.Clock();
+
+		var segments = 40, 
+			xMin = -4, xMax = 4, 
+			yMin = -4, yMax = 4, 
+			zMin = -10, zMax = 10;
+			
+		var wireMaterial;
+		
+		init();
+		createGraph();
+		animate();
+
+		// All the functions to computer the program		
+		function init(){
+			// SCENE
+			scene = new THREE.Scene();
+
+			// CAMERA
+			var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+			
+			var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+			camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+			camera.position.set( 2*xMax, 0.5*yMax, 4*zMax);
+			camera.up = new THREE.Vector3( 0, 0, 1 );
+			camera.lookAt(scene.position);
+			scene.add(camera);
+				
+			// RENDERER
+			if ( Detector.webgl )
+				renderer = new THREE.WebGLRenderer( {antialias:true} );
+			else
+				renderer = new THREE.CanvasRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			
+			container = document.getElementById( 'ThreeJS' );
+			container.appendChild( renderer.domElement );
+			
+			// CONTROLS
+			controls = new THREE.TrackballControls( camera, renderer.domElement );
+			
+			// STATS
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.bottom = '0px';
+			stats.domElement.style.zIndex = 100;
+			container.appendChild( stats.domElement );
+			
+			// LIGHT
+			var light = new THREE.PointLight(0xffffff);
+			light.position.set(0,250,0);
+			scene.add(light);
+			
+			// wireframe for xy-plane
+			var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000088, wireframe: true, side:THREE.DoubleSide } ); 
+			var floorGeometry = new THREE.PlaneGeometry(1000,1000,10,10);
+			var floor = new THREE.Mesh(floorGeometry, wireframeMaterial);
+			floor.position.z = -0.01;
+			// rotate to lie in x-y plane
+			// floor.rotation.x = Math.PI / 2;
+			scene.add(floor);
+			
+			scene.add( new THREE.AxisHelper(50) );
+			
+			// "wireframe texture"
+			var wireTexture = new THREE.ImageUtils.loadTexture( 'https://stemkoski.github.io/Three.js/images/square.png' );
+			wireTexture.wrapS = wireTexture.wrapT = THREE.RepeatWrapping; 
+			wireTexture.repeat.set( 40, 40 );
+			
+			var texture = new THREE.TextureLoader().load('https://stemkoski.github.io/Three.js/images/square.png');
+			wireMaterial = new THREE.MeshBasicMaterial( {vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
+
+			// bgcolor
+			renderer.setClearColor( 0x008888, 1 );
+		}
+
+		function createGraph(){
+			var xRange = xMax - xMin,
+				yRange = yMax - yMin;
+			var f = Parser.parse("x^2 + y^2").toJSFunction( ['x','y'] );
+			var meshFunction = function(x, y){
+				x = xRange * x + xMin;
+				y = yRange * y + yMin;
+				
+				var z = f(x,y);
+				
+				if ( isNaN(z) )
+					return new THREE.Vector3(0,0,0);
+				else
+					return new THREE.Vector3(x, y, z);
+			};
+			
+			// true => sensible image tile repeat...
+			var graphGeometry = new THREE.ParametricGeometry( meshFunction, segments, segments, true );
+			
+			// calculate vertex colors based on Z values
+			///////////////////////////////////////////////
+			graphGeometry.computeBoundingBox();
+			zMin = graphGeometry.boundingBox.min.z;
+			zMax = graphGeometry.boundingBox.max.z;
+			var zRange = zMax - zMin;
+			var color, point, face, numberOfSides, vertexIndex;
+			// faces are indexed using characters
+			var faceIndices = [ 'a', 'b', 'c', 'd' ];
+			// first, assign colors to vertices as desired
+			for ( var i = 0; i < graphGeometry.vertices.length; i++ ) 
+			{
+				point = graphGeometry.vertices[ i ];
+				color = new THREE.Color( 0x0000ff );
+				color.setHSL( 0.7 * (zMax - point.z) / zRange, 1, 0.5 );
+				graphGeometry.colors[i] = color; // use this array for convenience
+			}
+			// copy the colors as necessary to the face's vertexColors array.
+			for ( var i = 0; i < graphGeometry.faces.length; i++ ) 
+			{
+				face = graphGeometry.faces[ i ];
+				numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
+				for( var j = 0; j < numberOfSides; j++ ) 
+				{
+					vertexIndex = face[ faceIndices[ j ] ];
+					face.vertexColors[ j ] = graphGeometry.colors[ vertexIndex ];
+				}
+			}
+
+			//wireMaterial.map.repeat.set( 20, 20 );
+			
+			var graphMesh = new THREE.Mesh( graphGeometry, wireMaterial );
+			graphMesh.doubleSided = true;
+			scene.add(graphMesh);
+		}
+		
+		function animate() {
+			requestAnimationFrame( animate );
+			render();
+			controls.update();
+			stats.update();
+		}
+
+		function render(){
+			renderer.render( scene, camera );
+		}
+
+	</script>
+
+</body>
+</html>

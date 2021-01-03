@@ -1,0 +1,287 @@
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta name="description" content="CS4406 Computer Graphics - Programming Assignment #6" />
+
+  	<meta charset="utf-8" />
+
+	<title>Sample Three.js</title>
+
+	<style>
+
+		#container {
+
+			background: #000000;
+
+			width: 100%;
+
+			height: 100%;
+
+		}
+
+  </style>
+
+<meta charset=utf-8 />
+
+<title>CS4406 Computer Graphics - Programming Assignment #6</title>
+
+<style id="jsbin-css">
+
+</style>
+
+</head>
+
+<body>
+
+<div id="container">
+
+</div>
+
+</body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/99/three.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.5/dat.gui.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+
+<script type="text/javascript">
+
+var example = (function () {
+
+    "use strict";
+
+    var scene = new THREE.Scene(),
+
+    renderer = new THREE.WebGLRenderer(),
+
+     camera,
+
+     earthGeometry,
+
+     moonGeometry,        
+
+     controls,
+
+     t = 0,
+
+     width,
+
+     height;
+	 
+	 
+    //enable settings for renderer to display shadows
+
+    renderer.shadowMap.enabled = true;
+
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    function initScene() {
+
+
+
+        //scale render to window size
+
+        width = window.innerWidth;
+
+        height = window.innerHeight;
+
+        renderer.setSize(width, height);
+
+
+
+        // Earth and Moon params
+
+        var radius = 0.5, segments = 32;
+
+
+
+        // this spawns camera and sets it after the farthest object (15z), thus being at 16z
+
+        camera = new THREE.PerspectiveCamera(90, width / height, 0.01, 1000);
+
+        camera.position.z = 16;
+
+        controls = new THREE.OrbitControls(camera);
+
+
+        // use a directional light to work as sun and make eclipse possible
+
+        // the defaults are being overridden, shadowDarkness, shadowCameraVisibile etc.
+
+        var light = new THREE.DirectionalLight(0xffffff, 1, 100);
+
+        light.position.set(40, 0, 15); 			//default; light shining from right
+
+        light.castShadow = true;
+
+        light.shadowDarkness = 0.5;
+
+        light.shadowCameraVisible = true;
+
+        //add light to scene
+
+        scene.add(light);
+
+        //add ambient Light for better scene
+
+        scene.add(new THREE.AmbientLight(0x333333));
+
+        
+
+        //Create the earth Geometry
+
+        earthGeometry = createEarth(radius, segments);
+
+        earthGeometry.receiveShadow = true; //default
+
+        earthGeometry.position.set(0, 0, 1);
+
+        scene.add(earthGeometry);
+
+        
+
+        moonGeometry = createMoon(radius, segments);
+
+        moonGeometry.position.set(0, 0, 10);
+
+        moonGeometry.castShadow = true;
+
+        scene.add(moonGeometry);
+
+        
+
+        document.getElementById("container").appendChild(renderer.domElement);
+
+        render();
+
+    }
+
+
+
+    function render() {
+
+        controls.update();
+
+        t += 0.01;
+
+        earthGeometry.rotation.y += 0.005;
+
+
+
+        // calculate sin and cos around t to rotate around the moon
+
+        // no matter how long this runs, it will always work
+
+        moonGeometry.position.x = 10 * Math.cos(t) + 0;
+
+        moonGeometry.position.z = 10 * Math.sin(t) + 0;
+
+        requestAnimationFrame(render);
+
+        renderer.render(scene, camera);
+
+    }
+
+
+
+    function createEarth(radius, segments) {
+
+        var loader = new THREE.TextureLoader();
+
+        loader.crossOrigin = 'Anonymous';
+
+        THREE.ImageUtils.crossOrigin = '';
+
+
+
+        // this texture is the earth, all textures were obtained from here: http://planetpixelemporium.com/planets.html
+
+        var earthTexture = loader.load('https://i.imgur.com/FGVYh5W.jpg');
+
+        var moonBumpMap = loader.load('https://i.imgur.com/0kfFwUB.jpg');
+
+        var waterSpecularMap = loader.load('https://i.imgur.com/DMy3kUL.jpg');
+
+
+
+        return new THREE.Mesh(
+
+            new THREE.SphereGeometry(5, segments, segments),
+
+            new THREE.MeshPhongMaterial({
+
+                map: earthTexture,
+
+                bumpMap: moonBumpMap,
+
+                bumpScale: 0.005,
+
+                specularMap: waterSpecularMap,
+
+                specular: new THREE.Color('grey'),
+
+                shininess: 5 // shininess to ease out the reflex
+
+            })
+
+        );
+
+    }
+
+
+
+    function createMoon(radius, segments) {
+
+        //imgur doesnt need crossOrigin due to safe police, but rather be safe.
+
+        var loader = new THREE.TextureLoader();
+
+        loader.crossOrigin = 'Anonymous';
+
+        THREE.ImageUtils.crossOrigin = '';
+
+        var moonTexture = loader.load('https://i.imgur.com/B5KlrvK.jpg');
+
+        var moonBumpMap = loader.load('https://i.imgur.com/t4oq03M.jpg')
+
+        //here we make a smaller sphere for moon
+
+        return new THREE.Mesh(
+
+            new THREE.SphereGeometry(radius, segments, segments),
+
+            new THREE.MeshPhongMaterial({
+
+                map: moonTexture,
+
+                bumpMap: moonBumpMap,
+
+                bumpScale: 0.005,
+
+            })
+
+        );
+
+    }
+
+
+    window.onload = initScene;
+
+    return {
+
+        scene: scene
+
+    }
+
+
+
+})();
+
+	</script>
+
+</html>

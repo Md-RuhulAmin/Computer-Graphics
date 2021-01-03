@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+<meta name="description" content="CS4406 Computer Graphics - Assignment #4" />
+  	<meta charset="utf-8" />
+	<title>Assignment #4 for CS4406 Computer Graphics</title>
+	<style>
+		#container {
+			background: #000000;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+<meta charset=utf-8 />  
+<style id="jsbin-css"></style>
+</head>
+<body >
+<div id="container"></div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.5/dat.gui.min.js"></script>
+	<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.min.js"></script>
+	<script src= "https://threejs.org/examples/js/controls/TransformControls.js"></script>
+  <script type="text/javascript">
+	// set the scene size
+	var WIDTH = 600, HEIGHT = 600;
+
+	// set some camera attributes
+	var VIEW_ANGLE = 50, ASPECT = WIDTH / HEIGHT, NEAR = 0.01, FAR = 3000;
+
+	// get the DOM element to attach to
+	var $container = $('#container');
+
+	// create a WebGL renderer, camera, and a scene
+	// NOTE: for the assignment in Unit 4 where you need to use a texture, or in any other assignment where a texture is required 
+	// you should deactivate the Detector and use ONLY the CanvasRenderer.  There are some issues in using waht are called Cross Domain images for 
+	// for textures.   You can get more details by looking up WebGL and CORS using Google search.  I have included some code below that will 
+	// get around this issue that you can use. 
+	//if ( Detector.webgl )
+		var renderer = new THREE.WebGLRenderer({ antialias: true });
+	//else
+	//	var renderer = new THREE.CanvasRenderer();   
+
+	var scene = new THREE.Scene();
+	var clock = new THREE.Clock();
+	var camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
+	
+	// the camera starts at 0,0,0 so pull it back for some assignments you may need to adjust this value
+	// some distance to make the scene visible properly
+	camera.position.set( 1000, 1500, 350 );   	
+    camera.lookAt( 0, 200, 0 );
+      
+	// add the camera to the scene
+	scene.add(new THREE.GridHelper( 1200, 450) );
+   
+	// set up the camera controls.  Please keep in mind that what this does is move the entire scene around.
+	// because the entire scene is moving the position of the camera and lights in relation to objects within 
+	// the scene doesn't change so the lighting on the surface of the object(s) will not change either
+	var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+	cameraControls.addEventListener( 'mousemove', renderer );
+    
+    cameraControls.autoRotate = false;
+      
+	renderer.setPixelRatio( window.devicePixelRatio );
+    // start the renderer
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// attach the render-supplied DOM element
+	$container.append(renderer.domElement);
+
+	// ----------------------------------------------------------------------------------------
+	//  Example of Code that you can adapt to get around the issue of Cross-Domain issues and 
+    //  CORS restrictions using textures.  We have this problem when using jsbin.com as a
+    //  development environment becuase we cannot load texture images to the local server.
+    //  Rather we need to pull them from location using a web URL.  You can use the images 
+    //  that we have put on the uopeopleweb.com site along with the following code (modified 
+	//  of course for your particular program)
+	//
+	//  Notice that what this code does is create a new Texture object called Texture1 and loads
+	//	the texture image into the object.  
+	  
+	//	var Texture1 = new THREE.Texture();
+    //	var loader = new THREE.ImageLoader();
+	
+    //	loader.addEventListener( 'load', function ( event ) {
+    //		Texture1.image = event.content;
+    //		Texture1.needsUpdate = true;
+    // 	} );
+	
+    //	loader.load( 'http://www.palabraserrantes.com/wp-content/uploads/2011/09/white-paper.jpg' );
+		
+	// ----------------------------------------------------------------------------------------
+	//  END OF THE STANDARD CODE FOR THE ASSIGNMENT
+	//  Following this is where you must place your own custom code to complete the assignment
+	// ----------------------------------------------------------------------------------------
+ 
+    //Transform controls the camera
+    
+    
+      
+    // add ambient lighting
+    // I change the color of the AmbientLight to Red as the assignment ask for.
+    var ambientLight = new THREE.AmbientLight(0xffffff);
+    scene.add(ambientLight); 
+      
+      
+    //Shere geometry
+    var sphereGeometry = new THREE.SphereGeometry( 150, 90, 30 );
+    var sphereMaterial = new THREE.MeshPhongMaterial( {color: 0xff0000, wireframe: false} );
+    var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+    sphere.position.set(250, 180, -300);
+     
+      
+    //Cylinder geometry
+    var CylGeometry = new THREE.CylinderBufferGeometry( 100, 100, 300, 100 );
+    var cylMaterial = new THREE.MeshLambertMaterial( {color: 0x0000ff, wireframe: false} );
+    var cylinder = new THREE.Mesh( CylGeometry, cylMaterial );
+    cylinder.position.set( 250, 180, 300 );
+      
+      
+    //Torus Geometry
+    var torusGeometry = new THREE.TorusGeometry( 100, 50, 20, 100 );
+    var torusMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true} );
+    var torus = new THREE.Mesh( torusGeometry, torusMaterial );
+    torus.position.set(-250, 180, 300);
+      
+    // Loading one texture in cube geometry
+    var texture = new THREE.TextureLoader().load( 'https://threejs.org/examples/textures/brick_diffuse.jpg');
+	texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    
+    //Box Geometry
+    var cubeGeometry = new THREE.BoxBufferGeometry( 200, 200, 200 );
+    var cubeMaterial = new THREE.MeshBasicMaterial( {map: texture} );
+    var cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+    cube.position.set(-250, 180, -300);
+      
+    
+    //create a group and add the two cubes
+    //These cubes can now be rotated / scaled etc as a group
+    var group = new THREE.Group();
+      group.add(sphere);
+      group.add(cylinder);
+      group.add(torus);
+      group.add(cube);
+   
+   //TO transform the scene I have this lines of code. 
+    //var control = new THREE.TransformControls( camera, renderer.domElement );
+   //   control.addEventListener( 'mouseDown', render );
+
+   //   control.addEventListener( 'dragging-changed', function ( event ) {
+
+   //     cameraControls.enabled = ! event.value;
+
+   //  } );
+
+   scene.add(group);
+      
+      //control.attach(group);
+      //scene.add(control);
+      
+
+	// ----------------------------------------------------------------------------------------
+	// END OF YOUR CUSTOM CODE FOR THE ASSIGNMENT
+	// The rendering functions that follow are standard and can be used for this assignment.  
+	// You are welcome to customize them or create your own if you desire, however, you can 
+	// simply use the code provided.
+	//
+
+	// Standard functions for rendering the scene.  Notice how we have the animate function 
+	// which submits a call to requestAnimationFrame to call animate.   This creates a loop
+	// that will render the scene again whenever something within the scene changes.
+      
+	function animate() {
+		requestAnimationFrame(animate);
+        cube.rotation.x += 0.005;
+		cube.rotation.y += 0.01;
+		cube.rotation.z += 0.01;
+        torus.rotation.x += 0.04;
+		torus.rotation.y += 0.02;
+		torus.rotation.z += 0.01;
+        cylinder.rotation.x += 0.005;
+		cylinder.rotation.y += 0.01;
+		cylinder.rotation.z += 0.01;
+        group.rotation.x += 0.0;
+		group.rotation.y += 0.005;
+		group.rotation.z += 0.0;
+		render();
+	}
+
+	function render() {
+ 		cameraControls.update();
+		renderer.render(scene, camera);
+	}
+	animate();
+    
+	</script>
+  </body>
+</html>
